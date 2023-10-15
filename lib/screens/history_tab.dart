@@ -37,8 +37,11 @@ class HistoryTab extends StatelessWidget {
           initiallyExpanded: true,
           title: Text(
             appId,
-            style:
-                TextStyle(color: Theme.of(context).textTheme.bodyLarge!.color),
+            style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors
+                        .white70 // Adjusted for better visibility in dark mode
+                    : Colors.deepPurple[900]),
           ),
           children: appNotifications!
               .map((notification) => NotificationItem(notification))

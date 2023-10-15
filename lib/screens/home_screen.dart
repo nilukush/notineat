@@ -27,9 +27,16 @@ class HomeScreenState extends State<HomeScreen> {
       initialIndex: _selectedTabIndex,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('NotiNeat'),
-          leading: Image.asset('assets/icon.png', fit: BoxFit.cover),
-          // Displaying the app icon
+          backgroundColor: Colors.deepPurple,
+          title: Row(
+            children: [
+              Image.asset('assets/icon.png', height: 32.0, width: 32.0),
+              // Adjusted size for better alignment
+              const SizedBox(width: 8.0),
+              // Some spacing between the icon and the title
+              const Text('NotiNeat'),
+            ],
+          ),
           actions: [
             if (_selectedTabIndex == 0) // Only show for Notifications tab
               IconButton(
@@ -51,6 +58,12 @@ class HomeScreenState extends State<HomeScreen> {
             )
           ],
           bottom: TabBar(
+            indicatorColor: Colors.purpleAccent,
+            // New color for the indicator
+            labelColor: Colors.white,
+            // Text color for the selected tab
+            unselectedLabelColor: Colors.grey[300],
+            // Text color for the unselected tab
             tabs: const [
               Tab(text: 'Notifications'),
               Tab(text: 'History'),

@@ -18,6 +18,9 @@ class NotificationItem extends StatelessWidget {
     return Card(
       elevation: 5,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      color: Theme.of(context).brightness == Brightness.dark
+          ? Colors.purple[900] // Darker shade for dark mode
+          : Colors.purple[50], // Lighter shade for light mode
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
         title: Text(notification.content,
