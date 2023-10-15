@@ -15,21 +15,13 @@ class NotificationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.amber, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 1,
-            blurRadius: 2,
-            offset: const Offset(2, 3),
-          )
-        ],
-      ),
+    return Card(
+      elevation: 5,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: ListTile(
-        title: Text(notification.content),
+        contentPadding: const EdgeInsets.all(12),
+        title: Text(notification.content,
+            style: const TextStyle(fontWeight: FontWeight.bold)),
         trailing: IconButton(
           icon: const Icon(Icons.mark_email_read),
           onPressed: () {

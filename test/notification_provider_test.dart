@@ -75,5 +75,20 @@ void main() {
       expect(provider.notifications.length, 1);
       expect(provider.notifications[0].appId, 'AppTest');
     });
+
+    test('Notifications are sorted by received date', () {
+      final earlierDate = DateTime.now().subtract(const Duration(hours: 1));
+      final laterDate = DateTime.now();
+
+      provider.addNotification(AppNotification(
+          id: '1',
+          appId: 'App1',
+          content: 'Earlier',
+          receivedDate: earlierDate));
+      provider.addNotification(AppNotification(
+          id: '2', appId: 'App2', content: 'Later', receivedDate: laterDate));
+
+      expect(provider.notifications.first.receivedDate, laterDate);
+    });
   });
 }
