@@ -23,10 +23,10 @@ class NotificationItem extends StatelessWidget {
         title: Text(notification.content,
             style: const TextStyle(fontWeight: FontWeight.bold)),
         trailing: IconButton(
-          icon: const Icon(Icons.mark_email_read),
+          icon: const Icon(Icons.done_all),
           onPressed: () {
             Provider.of<NotificationProvider>(context, listen: false)
-                .markAsRead(notification.id);
+                .markAsRead(notification.id, notification.appId);
           },
         ),
       ),

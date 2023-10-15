@@ -2,11 +2,9 @@
  * Copyright © [2023] [Nilesh Kumar]. All rights reserved.
  *
  */
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/notification.dart';
 import '../providers/notification_provider.dart';
 import '../widgets/notification_item.dart';
 
@@ -15,23 +13,35 @@ class HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    var notifications =
+    var notificationsGroupedByApp =
         Provider.of<NotificationProvider>(context).notifications;
 
-    // Grouping notifications by appId
-    var groupedNotifications =
-        groupBy(notifications, (AppNotification n) => n.appId);
+    if (notificationsGroupedByApp.isEmpty) {
+      return const Center(child: Text('No notifications available.'));
+    }
+
+    var sortedAppIds = notificationsGroupedByApp.keys
+        .where((appId) => notificationsGroupedByApp[appId]!.isNotEmpty)
+        .toList()
+      ..sort((a, b) => notificationsGroupedByApp[b]![0]
+          .receivedDate
+          .compareTo(notificationsGroupedByApp[a]![0].receivedDate));
 
     return ListView.builder(
-      itemCount: groupedNotifications.keys.length,
+      itemCount: sortedAppIds.length,
       itemBuilder: (ctx, index) {
-        var appId = groupedNotifications.keys.elementAt(index);
-        var appNotifications = groupedNotifications[appId];
+        var appId = sortedAppIds[index];
+        var appNotifications = notificationsGroupedByApp[appId];
 
         return ExpansionTile(
-          title: Text(appId),
+          initiallyExpanded: true,
+          title: Text(
+            appId,
+            style:
+                TextStyle(color: Theme.of(context).textTheme.bodyText1!.color),
+          ),
           children: appNotifications!
-              .map((notif) => NotificationItem(notif))
+              .map((notification) => NotificationItem(notification))
               .toList(),
         );
       },

@@ -2,6 +2,7 @@
  * Copyright © [2023] [Nilesh Kumar]. All rights reserved.
  *
  */
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -28,21 +29,28 @@ class NotificationProvider with ChangeNotifier {
   final List<AppNotification> _history = [];
   bool _isDarkMode = false;
 
-  List<AppNotification> get notifications => [..._notifications];
-
-  List<AppNotification> get history => [..._history];
+  final Map<String, List<AppNotification>> _notificationsGroupedByApp = {};
+  final Map<String, List<AppNotification>> _historyGroupedByApp = {};
 
   bool get isDarkMode => _isDarkMode;
 
   // Constructor
   NotificationProvider() {
     _loadDarkModePreference();
+    _loadNotifications();
+    _loadHistoryFromPrefs();
+
     if (Platform.isAndroid) {
       _initNotificationListener();
     } else if (Platform.isIOS) {
       _initLocalNotificationsForiOS();
     }
   }
+
+  Map<String, List<AppNotification>> get notifications =>
+      _notificationsGroupedByApp;
+
+  Map<String, List<AppNotification>> get history => _historyGroupedByApp;
 
   init() async {
     var initializationSettingsAndroid =
@@ -55,24 +63,34 @@ class NotificationProvider with ChangeNotifier {
   }
 
   void addNotification(AppNotification notif) {
-    _notifications.add(notif);
-    _notifications.sort((a, b) =>
-        b.receivedDate.compareTo(a.receivedDate)); // Sort by received date
+    if (!_notificationsGroupedByApp.containsKey(notif.appId)) {
+      _notificationsGroupedByApp[notif.appId] = [];
+    }
+    _notificationsGroupedByApp[notif.appId]!.add(notif);
+    _notificationsGroupedByApp[notif.appId]!
+        .sort((a, b) => b.receivedDate.compareTo(a.receivedDate));
+    _saveNotifications();
     notifyListeners();
   }
 
-  void markAsRead(String id) {
-    final notification = _notifications.firstWhere((notif) => notif.id == id);
-    _history.add(notification);
-    _notifications.remove(notification);
+  void markAsRead(String id, String appId) {
+    final notification = _notificationsGroupedByApp[appId]!
+        .firstWhere((notif) => notif.id == id);
+    if (!_historyGroupedByApp.containsKey(appId)) {
+      _historyGroupedByApp[appId] = [];
+    }
+    _historyGroupedByApp[appId]!.add(notification);
+    _notificationsGroupedByApp[appId]!.remove(notification);
+    _saveHistoryToPrefs(); // Save after marking as read
     notifyListeners();
   }
 
   void markAllAsReadForApp(String appId) {
-    final appNotifications =
-        _notifications.where((notif) => notif.appId == appId).toList();
-    _history.addAll(appNotifications);
-    _notifications.removeWhere((notif) => notif.appId == appId);
+    if (!_historyGroupedByApp.containsKey(appId)) {
+      _historyGroupedByApp[appId] = [];
+    }
+    _historyGroupedByApp[appId]!.addAll(_notificationsGroupedByApp[appId]!);
+    _notificationsGroupedByApp[appId]!.clear();
     notifyListeners();
   }
 
@@ -141,5 +159,60 @@ class NotificationProvider with ChangeNotifier {
     );
 
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  void _saveNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encodedNotifications = jsonEncode({
+      'notifications': _notificationsGroupedByApp,
+      'history': _historyGroupedByApp,
+    });
+    prefs.setString('allNotifications', encodedNotifications);
+  }
+
+  void _loadNotifications() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encodedData = prefs.getString('allNotifications');
+    if (encodedData != null) {
+      final Map<String, dynamic> decodedData = jsonDecode(encodedData);
+      _notificationsGroupedByApp.clear();
+      _historyGroupedByApp.clear();
+      if (decodedData['notifications'] != null) {
+        (decodedData['notifications'] as Map<String, dynamic>)
+            .forEach((key, value) {
+          _notificationsGroupedByApp[key] = (value as List)
+              .map((data) => AppNotification.fromJson(data))
+              .toList();
+        });
+      }
+      if (decodedData['history'] != null) {
+        (decodedData['history'] as Map<String, dynamic>).forEach((key, value) {
+          _historyGroupedByApp[key] = (value as List)
+              .map((data) => AppNotification.fromJson(data))
+              .toList();
+        });
+      }
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveHistoryToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final historyData = history.map((app, notifications) =>
+        MapEntry(app, notifications.map((notif) => notif.toJson()).toList()));
+    prefs.setString('history', json.encode(historyData));
+  }
+
+  Future<void> _loadHistoryFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final historyData =
+        json.decode(prefs.getString('history') ?? '{}') as Map<String, dynamic>;
+    _historyGroupedByApp.clear();
+    historyData.forEach((app, notifications) {
+      _historyGroupedByApp[app] = (notifications as List)
+          .map((notif) => AppNotification.fromJson(notif))
+          .toList();
+    });
+    notifyListeners();
   }
 }
